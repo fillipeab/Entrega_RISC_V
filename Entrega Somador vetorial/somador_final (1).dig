@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="utf-8"?>
+<circuit>
+  <version>2</version>
+  <attributes/>
+  <visualElements>
+    <visualElement>
+      <elementName>External</elementName>
+      <elementAttributes>
+        <entry>
+          <string>applicationType</string>
+          <appType>GHDL</appType>
+        </entry>
+        <entry>
+          <string>Label</string>
+          <string>VEC_ADDSUB</string>
+        </entry>
+        <entry>
+          <string>externalInputs</string>
+          <string>A_i:32,B_i:32,mode_i,vecSize_i:2</string>
+        </entry>
+        <entry>
+          <string>Width</string>
+          <int>5</int>
+        </entry>
+        <entry>
+          <string>Code</string>
+          <string>library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
+
+entity VEC_ADDSUB is
+    port (
+        A_i       : in  std_logic_vector(31 downto 0); -- input1
+        B_i       : in  std_logic_vector(31 downto 0); --input2
+        mode_i    : in  std_logic; --modo, 
+		  --0 = soma, 
+          --1= sub
+        vecSize_i : in  std_logic_vector(1 downto 0); -- tamanho, 
+		  --00=4b (8 operacoes simultaneas), 
+		  --01=8b (4 operacoes simultaneas), 
+		  --10=16b (2 operacoes simultaneas),
+		  --11=32b (1 operacoes simultaneas)      
+        S_o       : out std_logic_vector(31 downto 0) --output
+    );
+end entity;
+
+architecture ARQ of VEC_ADDSUB is
+    signal B_neg : std_logic_vector(31 downto 0); -- vetor do Not B
+    
+begin
+    B_neg &lt;= B_i xor (31 downto 0 =&gt; mode_i); 
+    	-- se for subtracao, pegaremos o complemento de 2 do B_i: 
+		--(A - B = A + (Not B))
+
+process (A_i, B_neg, mode_i, vecSize_i)
+    variable c   : std_logic;
+begin
+    -- Inicialização obrigatória do carry
+    c := mode_i;
+
+    for i in 0 to 31 loop
+
+        if (i = 0) or
+           (vecSize_i = &quot;00&quot; and i mod 4 = 0) or
+           (vecSize_i = &quot;01&quot; and i mod 8 = 0) or
+           (vecSize_i = &quot;10&quot; and i mod 16 = 0) or
+           (vecSize_i = &quot;11&quot; and i = 0) then
+            c := mode_i;
+        end if;
+
+        -- Soma do bit
+        S_o(i) &lt;= A_i(i) xor B_neg(i) xor c;
+
+        c := (A_i(i) and B_neg(i)) or
+             (A_i(i) and c) or
+             (B_neg(i) and c);
+    end loop;
+end process;
+
+end ARQ;</string>
+        </entry>
+        <entry>
+          <string>externalOutputs</string>
+          <string>S_o:32</string>
+        </entry>
+      </elementAttributes>
+      <pos x="720" y="180"/>
+    </visualElement>
+    <visualElement>
+      <elementName>In</elementName>
+      <elementAttributes>
+        <entry>
+          <string>Label</string>
+          <string>A</string>
+        </entry>
+        <entry>
+          <string>Bits</string>
+          <int>32</int>
+        </entry>
+        <entry>
+          <string>intFormat</string>
+          <intFormat>bin</intFormat>
+        </entry>
+      </elementAttributes>
+      <pos x="520" y="100"/>
+    </visualElement>
+    <visualElement>
+      <elementName>In</elementName>
+      <elementAttributes>
+        <entry>
+          <string>Label</string>
+          <string>B</string>
+        </entry>
+        <entry>
+          <string>Bits</string>
+          <int>32</int>
+        </entry>
+        <entry>
+          <string>intFormat</string>
+          <intFormat>bin</intFormat>
+        </entry>
+        <entry>
+          <string>InDefault</string>
+          <value v="1" z="false"/>
+        </entry>
+      </elementAttributes>
+      <pos x="400" y="200"/>
+    </visualElement>
+    <visualElement>
+      <elementName>In</elementName>
+      <elementAttributes>
+        <entry>
+          <string>Label</string>
+          <string>Mode (0 = SOM, 1 = SUB)</string>
+        </entry>
+        <entry>
+          <string>intFormat</string>
+          <intFormat>bin</intFormat>
+        </entry>
+      </elementAttributes>
+      <pos x="260" y="240"/>
+    </visualElement>
+    <visualElement>
+      <elementName>In</elementName>
+      <elementAttributes>
+        <entry>
+          <string>Label</string>
+          <string>TAM (00=4, 01=8, 10=16, 11=32)</string>
+        </entry>
+        <entry>
+          <string>Bits</string>
+          <int>2</int>
+        </entry>
+        <entry>
+          <string>intFormat</string>
+          <intFormat>bin</intFormat>
+        </entry>
+      </elementAttributes>
+      <pos x="260" y="300"/>
+    </visualElement>
+    <visualElement>
+      <elementName>Out</elementName>
+      <elementAttributes>
+        <entry>
+          <string>Label</string>
+          <string>S</string>
+        </entry>
+        <entry>
+          <string>Bits</string>
+          <int>32</int>
+        </entry>
+        <entry>
+          <string>intFormat</string>
+          <intFormat>bin</intFormat>
+        </entry>
+      </elementAttributes>
+      <pos x="1000" y="220"/>
+    </visualElement>
+  </visualElements>
+  <wires>
+    <wire>
+      <p1 x="260" y="240"/>
+      <p2 x="720" y="240"/>
+    </wire>
+    <wire>
+      <p1 x="700" y="260"/>
+      <p2 x="720" y="260"/>
+    </wire>
+    <wire>
+      <p1 x="520" y="100"/>
+      <p2 x="600" y="100"/>
+    </wire>
+    <wire>
+      <p1 x="600" y="180"/>
+      <p2 x="720" y="180"/>
+    </wire>
+    <wire>
+      <p1 x="400" y="200"/>
+      <p2 x="720" y="200"/>
+    </wire>
+    <wire>
+      <p1 x="260" y="300"/>
+      <p2 x="700" y="300"/>
+    </wire>
+    <wire>
+      <p1 x="820" y="220"/>
+      <p2 x="1000" y="220"/>
+    </wire>
+    <wire>
+      <p1 x="600" y="100"/>
+      <p2 x="600" y="180"/>
+    </wire>
+    <wire>
+      <p1 x="700" y="260"/>
+      <p2 x="700" y="300"/>
+    </wire>
+  </wires>
+  <measurementOrdering/>
+</circuit>
